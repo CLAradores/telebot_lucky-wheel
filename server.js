@@ -2,7 +2,6 @@ const express = require("express");
 const mongoose = require("mongoose");
 const cors = require("cors");
 const ValidCodesModel = require("./models/ValidCodes");
-const allCodes = require("./codes");
 require("dotenv").config();
 
 const app = express();
@@ -25,22 +24,8 @@ const dbURI = process.env.DB_URI;
 
 mongoose
     .connect(dbURI) // Removed deprecated options
-    .then(() => {
-        console.log("MongoDB Connected for seeding");
-        return ValidCodesModel.deleteMany({}); // Clear existing data
-    })
-    .then(() => {
-        return ValidCodesModel.insertMany(allCodes); // Insert new data
-    })
-    .then(() => {
-        console.log("Data seeded successfully");
-        console.log("MongoDB Connected");
-        mongoose.connection.close();
-    })
-    .catch((err) => {
-        console.error("Seeding error:", err);
-        mongoose.connection.close();
-    });
+    .then(() => console.log("MongoDB Connected"))
+    .catch((err) => console.error("MongoDB connection error:", err));
 
 // GET endpoint to fetch all codes
 app.get("/getCodes", async (req, res) => {
