@@ -6,15 +6,28 @@ require("dotenv").config();
 
 const app = express();
 app.use(cors());
-app.use(express.json());
+app.use(
+    express.json({
+        strict: true, // This will reject payloads with invalid JSON
+    })
+);
+
+// Middleware to catch invalid JSON errors
+app.use((err, req, res, next) => {
+    if (err instanceof SyntaxError && err.status === 400 && "body" in err) {
+        return res.status(400).send({ error: "Invalid JSON format" });
+    }
+    next();
+});
 
 const dbURI = process.env.DB_URI;
 
 mongoose
-    .connect(dbURI, { useNewUrlParser: true, useUnifiedTopology: true })
+    .connect(dbURI) // Removed deprecated options
     .then(() => console.log("MongoDB Connected"))
     .catch((err) => console.error("MongoDB connection error:", err));
 
+// GET endpoint to fetch all codes
 app.get("/getCodes", async (req, res) => {
     try {
         const codes = await ValidCodesModel.find({});
@@ -24,16 +37,15 @@ app.get("/getCodes", async (req, res) => {
     }
 });
 
-//UPDATE CODE STATUS
+// PATCH endpoint to update code status to 'used'
 app.patch("/updateStatus/:code", async (req, res) => {
     const { code } = req.params;
 
     try {
-        // Find the code by its code value and update the status to "used" only if it is "active"
         const updatedCode = await ValidCodesModel.findOneAndUpdate(
-            { code: code, status: "active" }, // Ensure the code is "active"
-            { status: "used" }, // Update status to "used"
-            { new: true } // Return the updated document
+            { code: code, status: "active" },
+            { status: "used" },
+            { new: true }
         );
 
         if (updatedCode) {
@@ -53,14 +65,14 @@ app.patch("/updateStatus/:code", async (req, res) => {
     }
 });
 
-//UPDATE CODE
+// PATCH endpoint to update any code's status
 app.patch("/update/:code", async (req, res) => {
     const { code } = req.params;
     try {
         const updatedCode = await ValidCodesModel.findOneAndUpdate(
             { code: code },
-            { status: req.body.status }, // Update status to the value provided in the request
-            { new: true } // Return the updated document
+            { status: req.body.status },
+            { new: true }
         );
         if (updatedCode) {
             res.status(200).json(updatedCode);
@@ -72,7 +84,7 @@ app.patch("/update/:code", async (req, res) => {
     }
 });
 
-// New POST endpoint to add a new code
+// POST endpoint to add a new code
 app.post("/addCode", async (req, res) => {
     const { code, status } = req.body;
 
@@ -92,7 +104,7 @@ app.post("/addCode", async (req, res) => {
     }
 });
 
-// New DELETE endpoint to remove a code
+// DELETE endpoint to remove a code
 app.delete("/deleteCode/:code", async (req, res) => {
     const { code } = req.params;
 
