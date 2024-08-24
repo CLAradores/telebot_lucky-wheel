@@ -5,7 +5,7 @@ require("dotenv").config();
 const dbURI = process.env.DB_URI;
 
 mongoose
-    .connect(dbURI, { useNewUrlParser: true, useUnifiedTopology: true })
+    .connect(dbURI)
     .then(() => {
         console.log("MongoDB Connected for seeding");
         return ValidCodesModel.deleteMany({}); // Clear existing data
